@@ -8,11 +8,10 @@ def start():
                     1. Search in the database
                     2. Update the database
                     3. Delete from the database
-                    4. General Info about the database
                     q. Quit 
                     """)
         tool_choice = input("Enter your choice: ").strip()
-        if tool_choice not in ['1', '2', '3', '4', 'q']:
+        if tool_choice not in ['1', '2', '3', 'q']:
             print("Please choose one of the four actions by writing its corresponding number")
         else:
             break
@@ -20,27 +19,25 @@ def start():
 
 
 def action(config, user_choice):
-    # conn = operate_db.connect_db(config)
-    conn = None
+    conn = operate_db.connect_db(config)
     if user_choice == '1':
-        operate_db.pre_search(conn)
+        res = operate_db.pre_search(conn)
+        print(res)
     elif user_choice == '2':
         operate_db.pre_update(conn)
     elif user_choice == '3':
         operate_db.pre_delete(conn)
-    elif user_choice == '4':
-        operate_db.info(conn)
 
 
 def end():
     print("------------------")
-    print("""Do you want to proceed?
-            y - yes
-            q - quit 
+    print("""Do you want to quit?
+            y or q - yes, quit
+            n - no, continue
             """)
     answer = input()
     print("------------------")
-    if answer == 'q':
+    if answer == 'y' or answer == 'q':
         quit()
 
 

@@ -2,9 +2,28 @@ import psycopg2
 from fill import connect_db
 
 
+def list_tables(db_connection):
+    cur = db_connection.cursor()
+    cur.execute("""SELECT table_name FROM information_schema.tables
+           WHERE table_schema = 'public'""")
+    return [value[0] for value in cur.fetchall()]
+
+
+def list_cols(db_connection, table):
+    cur = None
+    if table.strip() == "" or table is None:
+        print("!!! No table name provided")
+        quit()
+    else:
+        cur = db_connection.cursor()
+        cur.execute(f'SELECT * FROM {table} LIMIT 0;')
+    return [desc[0] for desc in cur.description]
+
+
 def pre_update(db_connection):
     """ collecting further data for update """
-    print("Update action")
+    print("Update action...")
+    print(f'Available tables: {list_tables(db_connection)}')
     table = input("What table do you want to update in: ")
     while True:
         print("""What do you want to update?\n
@@ -23,6 +42,7 @@ def pre_update(db_connection):
             content = input("Please specify the new content in SQL format:  ")
             update(db_connection, table, cond, content, 'mod')
         elif answer == 'b':
+            print(f'Available cols: {list_cols(db_connection,table)} ')
             content = input("Please provide the new values in SQL format:  ")
             update(db_connection, table, None, content, 'add_r')
         else:
@@ -43,7 +63,6 @@ def update(db_connection, table, condition, new_content, type_of_update):
     # get tables columns names
     query = f'ALTER TABLE {table} ADD COLUMN ...;'
 
-
     # query = "ALTER TABLE mytable ADD COLUMN sid serial PRIMARY KEY"
 
     # cur.execute(query)
@@ -56,7 +75,7 @@ def update(db_connection, table, condition, new_content, type_of_update):
 
 def pre_delete(db_connection):
     """ collecting further data for deletion """
-    print("Deleting action")
+    print("Deleting action...")
     while True:
         print("""Do you want to delete table or entry in table?\n
                         a. Entry in table
@@ -69,11 +88,14 @@ def pre_delete(db_connection):
         else:
             break
     if answer == 'a':
+        print(f'Available tables: {list_tables(db_connection)}')
         table = input("What table do you want to delete in: ")
+        print(f'Available cols: {list_cols(db_connection, table)} ')
         cond = input("What do you want to search? Please provide in SQL format: ")
         print(f'Deleting in {table} with condition\n{cond}')
         delete(db_connection, table, cond)
     elif answer == 'b':
+        print(f'Available tables: {list_tables(db_connection)}')
         table = input("What table do you want to delete: ")
         print(f'Deleting table {table}')
         delete_table(db_connection, table)
@@ -82,60 +104,65 @@ def pre_delete(db_connection):
 
 
 def delete_table(db_connection, table):
-    # cur = db_connection.cursor()
-    # get tables columns names
-    query = f'DROP TABLE IF EXISTS {table};'
-
-    # cur.execute(query)
-    # db_connection.commit()
-    # cur.close()
-    # db_connection.close()
+    cur = db_connection.cursor()
+    query = ""
+    if table.strip() == "" or table is None:
+        print("!!! No table name provided")
+        quit()
+    else:
+        query = f'DROP TABLE IF EXISTS {table};'
+    cur.execute(query)
+    db_connection.commit()
+    cur.close()
+    db_connection.close()
 
     print(f'Table {table} was deleted')
 
 
 def delete(db_connection, table, condition):
-    # cur = db_connection.cursor()
-    # get tables columns names
-    query = f'DELETE FROM {table} WHERE {condition};'
+    cur = db_connection.cursor()
+    if (table.strip() == "" or table is None) or \
+            (condition.strip() == "" or condition is None):
+        print("!!! No table name provided")
+        quit()
+    else:
+        query = f'DELETE FROM {table} WHERE {condition};'
+        cur.execute(query)
+        db_connection.commit()
 
-    # cur.execute(query)
-    # db_connection.commit()
-    # cur.close()
-    # db_connection.close()
+    cur.close()
+    db_connection.close()
 
     print("An entry in table was deleted")
 
 
 def pre_search(db_connection):
     """ collecting further data for search """
-    print("Searching action")
+    print("Searching action...")
+    print(f'Available tables: {list_tables(db_connection)}')
     table = input("What table do you want to search in: ")
+    print(f'Available cols: {list_cols(db_connection, table)} ')
     cond = input("What do you want to search? Please provide in SQL format: ")
-    print(f'Searching in {table} with condition\n{cond}')
     res = search(db_connection, table, cond)
+    return res
 
 
 def search(db_connection, table, condition):
-    # cur = db_connection.cursor()
+    cur = db_connection.cursor()
     # get tables columns names
-    query = f'SELECT * FROM {table} WHERE {condition};'
-    # result = [value[0] for value in cur.fetchall()]
+    query = ""
+    if table.strip() == "" or table is None:
+        print("!!! No table name provided")
+        quit()
+    elif condition.strip() == "" or condition is None:
+        query = f'SELECT * FROM {table}'
+    else:
+        query = f'SELECT * FROM {table} WHERE {condition};'
 
-    # cur.execute(query)
-    # db_connection.commit()
-    # cur.close()
-    # db_connection.close()
-    print("Search result")
+    cur.execute(query)
+    result = [value for value in cur.fetchall()]
+    db_connection.commit()
+    cur.close()
+    db_connection.close()
 
-
-def info(db_connection):
-    # cur = db_connection.cursor()
-    query = "SELECT * FROM information_schema.tables;"
-    # cur.execute(query)
-    # result = [value[0] for value in cur.fetchall()]
-    # print(res)
-    # db_connection.commit()
-    # cur.close()
-    # db_connection.close()
-    print("Info")
+    return result

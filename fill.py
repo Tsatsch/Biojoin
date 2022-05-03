@@ -1,6 +1,7 @@
 import io
 import json
 import psycopg2
+import pandas as pd
 
 
 def connect_db(config_path):
@@ -15,7 +16,6 @@ def connect_db(config_path):
         conn = psycopg2.connect(
             host=config["db_host"],
             dbname=config["db_name"],
-            port=config["db_port"],
             user=config["db_user"],
             password=config["db_pw"])
     except (Exception, psycopg2.DatabaseError) as error:
@@ -39,6 +39,13 @@ def parse_data(file):
     return headers, csv_content
 
 
+def merge(file1_path, file2_path, merge_on):
+    """we want to merge disease Omim and geneOmim"""
+    file1 = pd.read_csv(file1_path, sep="	")
+    file2 = pd.read_csv(file2_path, sep="	")
+    return pd.merge(file1, file2, on=merge_on, how='outer')
+
+
 def clean_csv_value(value):
     """ remove all non-visible \n in csv before inserting smth"""
     if value is None:
@@ -53,7 +60,7 @@ def fill_database(db_connection, table, headers, csv_content):
     q_args = []
 
     FROM = 0
-    TILL = 100  # todo: adjust for final run
+    TILL = len(csv_content)
 
     for line in csv_content[FROM:TILL]:
         q_dict_arg = {}
@@ -67,10 +74,10 @@ def fill_database(db_connection, table, headers, csv_content):
     csv_file_like_object = io.StringIO()
 
     for arg in q_args:
-        csv_file_like_object.write('|'.join(map(clean_csv_value, arg.values())) + '\n')
+        csv_file_like_object.write('~'.join(map(clean_csv_value, arg.values())) + '\n')
 
     csv_file_like_object.seek(0)
-    cur.copy_from(csv_file_like_object, f'{table}', sep='|')
+    cur.copy_from(csv_file_like_object, f'{table}', sep='~')
     # commit request
     db_connection.commit()
 
@@ -79,8 +86,16 @@ def fill_database(db_connection, table, headers, csv_content):
 
 
 if __name__ == '__main__':
-    # head, cont = parse_data('data/disease_OMIM.txt')
-    # fill_database(None, "", head, cont)
-    print("end")
+    merged = merge('data/disease_OMIM.txt', 'data/gene_OMIM.txt', 'disease_OMIM_ID')
+    merged.to_csv('data/merged.txt', sep="	", index=False)
+    head1, cont1 = parse_data('data/Homo_sapiens_gene_info.txt')
+    head2, cont2 = parse_data('data/SNP.txt')
+    head3, cont3 = parse_data('data/merged.txt')
 
-
+    conn = connect_db("config.json")
+    fill_database(conn, "gene", head1, cont1)
+    conn = connect_db("config.json")
+    fill_database(conn, "dbsnp", head2, cont2)
+    conn = connect_db("config.json")
+    fill_database(conn, "omim", head3, cont3)
+    print("Insert finished")
