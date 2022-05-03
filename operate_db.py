@@ -68,7 +68,6 @@ def update(db_connection, table, new_content, type_of_update, condition=None):
     cur.execute(query)
     db_connection.commit()
     cur.close()
-    db_connection.close()
     print("Table was updated")
 
 
@@ -113,7 +112,6 @@ def delete_table(db_connection, table):
     cur.execute(query)
     db_connection.commit()
     cur.close()
-    db_connection.close()
 
     print(f'Table {table} was deleted')
 
@@ -130,7 +128,6 @@ def delete(db_connection, table, condition):
         db_connection.commit()
 
     cur.close()
-    db_connection.close()
 
     print("An entry in table was deleted")
 
@@ -164,9 +161,7 @@ def pre_search(db_connection):
                 print("Please choose between 1, 2, 3, 4 and q")
             else:
                 break
-        # db_connection = None
-        # db_connection = fill.connect_db('config.json')
-        # cur = conn.cursor()
+
         if answer == '1':
             answer2 = input("Please provide a gene symbol: ")
             template_sql.fancy_print(template_sql.get_gene_info(db_connection, answer2))
@@ -209,6 +204,5 @@ def search(db_connection, table, condition):
     result = [value for value in cur.fetchall()]
     db_connection.commit()
     cur.close()
-    db_connection.close()
 
     return result
