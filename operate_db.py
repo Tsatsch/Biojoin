@@ -1,5 +1,6 @@
 import psycopg2
-from fill import connect_db
+import fill
+import template_sql as template_sql
 
 
 def list_tables(db_connection):
@@ -138,11 +139,58 @@ def pre_search(db_connection):
     """ collecting further data for search """
     print("Searching action...")
     print(f'Available tables: {list_tables(db_connection)}')
-    table = input("What table do you want to search in: ")
-    print(f'Available cols: {list_cols(db_connection, table)} ')
-    cond = input("What do you want to search? Please provide in SQL format: ")
-    res = search(db_connection, table, cond)
-    return res
+    while True:
+        print("""Pick option?\n
+                        a. Try out the search templates
+                        b. Make own search query
+                        q. Quit
+                        """)
+        answer = input("Enter your choice: ").strip()
+        if answer not in ['a', 'b', 'q']:
+            print("Please choose between a, b or q")
+        else:
+            break
+    if answer == 'a':
+        while True:
+            print("""What template do you want to try out?\n
+                            1. Find all gene information
+                            2. Find all gene symbols located in the chromosome
+                            3. Find all diseases associated with the SNP 
+                            4. Find all SNP IDs associated with the disease
+                            q. Quit
+                            """)
+            answer = input("Enter your choice: ").strip()
+            if answer not in ['1', '2', '3', '4', 'q']:
+                print("Please choose between 1, 2, 3, 4 and q")
+            else:
+                break
+        # db_connection = None
+        # db_connection = fill.connect_db('config.json')
+        # cur = conn.cursor()
+        if answer == '1':
+            answer2 = input("Please provide a gene symbol: ")
+            template_sql.fancy_print(template_sql.get_gene_info(db_connection, answer2))
+        elif answer == '2':
+            answer2 = input("Please provide a chromosome number: ")
+            template_sql.fancy_print(template_sql.get_genes_on_chromosome(db_connection, answer2))
+        elif answer == '3':
+            answer2 = input("Please provide a SNP id: ")
+            print(template_sql.get_gene_info(db_connection, answer2))
+            template_sql.fancy_print(template_sql.find_diseases(db_connection, answer2))
+        elif answer == '4':
+            answer2 = input("Please provide a disease name: ")
+            template_sql.fancy_print(template_sql.find_snp(db_connection, answer2))
+        else:
+            quit()
+
+    elif answer == 'b':
+        table = input("What table do you want to search in: ")
+        print(f'Available cols: {list_cols(db_connection, table)} ')
+        cond = input("What do you want to search? Please provide in SQL format: ")
+        res = search(db_connection, table, cond)
+        return res
+    else:
+        quit()
 
 
 def search(db_connection, table, condition):

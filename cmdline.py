@@ -1,3 +1,4 @@
+import fill
 import operate_db
 
 
@@ -19,7 +20,7 @@ def start():
 
 
 def action(config, user_choice):
-    conn = operate_db.connect_db(config)
+    conn = fill.connect_db(config)
     if user_choice == '1':
         res = operate_db.pre_search(conn)
         print(res)
