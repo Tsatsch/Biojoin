@@ -37,39 +37,37 @@ def pre_update(db_connection):
         else:
             break
 
-        if answer == 'a':
-            cond = input("What do you want to update? Please provide in SQL format: ")
+        if answer == 'a':  # TODO
+            print(f'Available cols: {list_cols(db_connection, table)} ')
+            print("Please pay attention to order of attribute and format: elem1 = value, elem2 = value, ...")
             content = input("Please specify the new content in SQL format:  ")
-            update(db_connection, table, cond, content, 'mod')
+            condition = input("What do you want to modify? Please provide in SQL format: ")
+            update(db_connection=db_connection, table=table, new_content=content,
+                   condition=condition, type_of_update='mod')
         elif answer == 'b':
-            print(f'Available cols: {list_cols(db_connection,table)} ')
+            print(f'Available cols: {list_cols(db_connection, table)} ')
+            print("Please pay attention to order of attribute and format: elem1, elem2, ...")
             content = input("Please provide the new values in SQL format:  ")
-            update(db_connection, table, None, content, 'add_r')
+            update(db_connection=db_connection, table=table,
+                   new_content=content, type_of_update='add_r')
         else:
             quit()
 
 
-def update(db_connection, table, condition, new_content, type_of_update):
+def update(db_connection, table, new_content, type_of_update, condition=None):
+    query = None
     if type_of_update == 'mod':
-        pass
+        query = f'UPDATE {table} SET {new_content} WHERE {condition}'
     elif type_of_update == 'add_r':
-        pass
-    elif type_of_update == 'add_c':
-        pass
+        query = f'INSERT INTO {table} VALUES ({new_content});'
     else:
         raise ValueError("Wrong type of update")
 
-    # cur = db_connection.cursor()
-    # get tables columns names
-    query = f'ALTER TABLE {table} ADD COLUMN ...;'
-
-    # query = "ALTER TABLE mytable ADD COLUMN sid serial PRIMARY KEY"
-
-    # cur.execute(query)
-    #
-    # db_connection.commit()
-    # cur.close()
-    # db_connection.close()
+    cur = db_connection.cursor()
+    cur.execute(query)
+    db_connection.commit()
+    cur.close()
+    db_connection.close()
     print("Table was updated")
 
 
