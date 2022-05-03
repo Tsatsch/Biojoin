@@ -67,7 +67,6 @@ def update(db_connection, table, new_content, type_of_update, condition=None):
     cur = db_connection.cursor()
     cur.execute(query)
     db_connection.commit()
-    cur.close()
     print("Table was updated")
 
 
@@ -111,7 +110,6 @@ def delete_table(db_connection, table):
         query = f'DROP TABLE IF EXISTS {table};'
     cur.execute(query)
     db_connection.commit()
-    cur.close()
 
     print(f'Table {table} was deleted')
 
@@ -126,8 +124,6 @@ def delete(db_connection, table, condition):
         query = f'DELETE FROM {table} WHERE {condition};'
         cur.execute(query)
         db_connection.commit()
-
-    cur.close()
 
     print("An entry in table was deleted")
 
@@ -152,7 +148,7 @@ def pre_search(db_connection):
             print("""What template do you want to try out?\n
                             1. Find all gene information
                             2. Find all gene symbols located in the chromosome
-                            3. Find all diseases associated with the SNP 
+                            3. Find all diseases associated with the SNP
                             4. Find all SNP IDs associated with the disease
                             q. Quit
                             """)
@@ -164,21 +160,23 @@ def pre_search(db_connection):
 
         if answer == '1':
             answer2 = input("Please provide a gene symbol: ")
-            template_sql.fancy_print(template_sql.get_gene_info(db_connection, answer2))
+            print(template_sql.get_gene_info(db_connection, answer2)[0])
         elif answer == '2':
             answer2 = input("Please provide a chromosome number: ")
-            template_sql.fancy_print(template_sql.get_genes_on_chromosome(db_connection, answer2))
+            res = template_sql.get_genes_on_chromosome(db_connection, answer2)
+            print([value[0] for value in res])
         elif answer == '3':
             answer2 = input("Please provide a SNP id: ")
-            print(template_sql.get_gene_info(db_connection, answer2))
-            template_sql.fancy_print(template_sql.find_diseases(db_connection, answer2))
+            res = template_sql.find_diseases(db_connection, answer2)
+            print([value[0] for value in res])
         elif answer == '4':
             answer2 = input("Please provide a disease name: ")
-            template_sql.fancy_print(template_sql.find_snp(db_connection, answer2))
+            res = template_sql.find_snp(db_connection, answer2)
+            print([value[0] for value in res])
         else:
             quit()
 
-    elif answer == 'b':
+    if answer == 'b':
         table = input("What table do you want to search in: ")
         print(f'Available cols: {list_cols(db_connection, table)} ')
         cond = input("What do you want to search? Please provide in SQL format: ")
@@ -203,6 +201,5 @@ def search(db_connection, table, condition):
     cur.execute(query)
     result = [value for value in cur.fetchall()]
     db_connection.commit()
-    cur.close()
 
     return result
