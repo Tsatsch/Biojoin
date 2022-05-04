@@ -11,16 +11,16 @@ def connect_db(config_path):
     with open(config_path) as f:
         config = json.load(f)
 
-    conn = None
+    connection = None
     try:
-        conn = psycopg2.connect(
+        connection = psycopg2.connect(
             host=config["db_host"],
             dbname=config["db_name"],
             user=config["db_user"],
             password=config["db_pw"])
     except (Exception, psycopg2.DatabaseError) as error:
         print(error)
-    return conn
+    return connection
 
 
 def parse_data(file):
