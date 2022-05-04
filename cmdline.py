@@ -32,13 +32,13 @@ def action(config, user_choice):
 
 def end():
     print("------------------")
-    print("""Do you want to quit?
-            y or q - yes, quit
-            n - no, continue
+    print("""Do you want to continue?
+            y - yes
+            n, q - no, quit
             """)
     answer = input()
     print("------------------")
-    if answer == 'y' or answer == 'q':
+    if answer == 'n' or answer == 'q':
         quit()
 
 

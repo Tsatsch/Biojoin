@@ -4,26 +4,35 @@ import template_sql as template_sql
 
 
 def list_tables(db_connection):
+    """ list available tables in db"""
     cur = db_connection.cursor()
     cur.execute("""SELECT table_name FROM information_schema.tables
            WHERE table_schema = 'public'""")
     return [value[0] for value in cur.fetchall()]
 
 
-def list_cols(db_connection, table):
+def cols_info(db_connection, table):
+    """ get info about column names and
+        their data types in a given table"""
     cur = None
     if table.strip() == "" or table is None:
         print("!!! No table name provided")
         quit()
     else:
         cur = db_connection.cursor()
-        cur.execute(f'SELECT * FROM {table} LIMIT 0;')
-    return [desc[0] for desc in cur.description]
+        cur.execute(f'select column_name, data_type from information_schema.columns '
+                    f'where table_name = \'{table}\';')
+    res_dict = {}
+    for tupl in cur.fetchall():
+        res_dict[tupl[0]] = tupl[1]
+    return res_dict
 
 
 def pre_update(db_connection):
     """ collecting further data for update """
-    print("Update action...")
+    print("*******************\n"
+          "Update action...\n"
+          "*******************")
     print(f'Available tables: {list_tables(db_connection)}')
     table = input("What table do you want to update in: ")
     while True:
@@ -38,17 +47,40 @@ def pre_update(db_connection):
         else:
             break
 
+    cols_dic = cols_info(db_connection, table)
     if answer == 'a':
-        print(f'Available cols: {list_cols(db_connection, table)} ')
-        print("Please pay attention to order of attribute and format: elem1 = value, elem2 = value, ...")
+        print(f'Available cols: {list(cols_dic.keys())} ')
         condition = input("What do you want to modify? Please provide in SQL format: ")
-        content = input("Please specify the new content in SQL format:  ")
+        print("Please provide the new values")
+        content = ""
+        for colname, coltype in cols_dic.items():
+            user_input = input(f'{colname}: ')
+            if coltype == 'character varying' and \
+                    "\'" not in user_input:
+                user_input = f'\'{user_input}\''
+            elif coltype == 'character varying' and \
+                '\"' in user_input:
+                user_input = user_input.replace('\"', '')
+                user_input = f'\'{user_input}\''
+            content += f'{colname}={user_input}, '
+        content = content[:-2]
         update(db_connection=db_connection, table=table, new_content=content,
                condition=condition, type_of_update='mod')
     elif answer == 'b':
-        print(f'Available cols: {list_cols(db_connection, table)} ')
-        print("Please pay attention to order of attribute and format: elem1, elem2, ...")
-        content = input("Please provide the new values in SQL format:  ")
+        print(f'Available cols: {list(cols_dic.keys())} ')
+        print("Please provide the new values")
+        content = ""
+        for colname, coltype in cols_dic.items():
+            user_input = input(f'{colname}: ')
+            if coltype == 'character varying' and \
+                    "\'" not in user_input:
+                user_input = f'\'{user_input}\''
+            elif coltype == 'character varying' and \
+                '\"' in user_input:
+                user_input = user_input.replace('\"', '')
+                user_input = f'\'{user_input}\''
+            content += f'{user_input}, '
+        content = content[:-2]
         update(db_connection=db_connection, table=table,
                new_content=content, type_of_update='add_r')
     else:
@@ -59,6 +91,7 @@ def update(db_connection, table, new_content, type_of_update, condition=None):
     query = None
     if type_of_update == 'mod':
         query = f'UPDATE {table} SET {new_content} WHERE {condition}'
+        print(f'UPDATE {table} SET {new_content} WHERE {condition}')
     elif type_of_update == 'add_r':
         query = f'INSERT INTO {table} VALUES ({new_content});'
     else:
@@ -72,7 +105,9 @@ def update(db_connection, table, new_content, type_of_update, condition=None):
 
 def pre_delete(db_connection):
     """ collecting further data for deletion """
-    print("Deleting action...")
+    print("*******************\n"
+          "Delete action...\n"
+          "*******************")
     while True:
         print("""Do you want to delete table or entry in table?\n
                         a. Entry in table
@@ -84,10 +119,11 @@ def pre_delete(db_connection):
             print("Please choose between a, b or q")
         else:
             break
+
     if answer == 'a':
         print(f'Available tables: {list_tables(db_connection)}')
         table = input("What table do you want to delete in: ")
-        print(f'Available cols: {list_cols(db_connection, table)} ')
+        print(f'Available cols: {list(cols_info(db_connection, table).keys())}')
         cond = input("What do you want to search? Please provide in SQL format: ")
         print(f'Deleting in {table} with condition\n{cond}')
         delete(db_connection, table, cond)
@@ -130,7 +166,9 @@ def delete(db_connection, table, condition):
 
 def pre_search(db_connection):
     """ collecting further data for search """
-    print("Searching action...")
+    print("*******************\n"
+          "Search action...\n"
+          "*******************")
     print(f'Available tables: {list_tables(db_connection)}')
     while True:
         print("""Pick option?\n
