@@ -1,5 +1,7 @@
 import io
 import json
+import time
+
 import psycopg2
 import pandas as pd
 
@@ -92,10 +94,13 @@ if __name__ == '__main__':
     head2, cont2 = parse_data('data/SNP.txt')
     head3, cont3 = parse_data('data/merged.txt')
 
+    start = time.time()
     conn = connect_db("config.json")
     fill_database(conn, "gene", head1, cont1)
     conn = connect_db("config.json")
     fill_database(conn, "dbsnp", head2, cont2)
     conn = connect_db("config.json")
     fill_database(conn, "omim", head3, cont3)
+    end = time.time()
     print("Insert finished")
+    print(f'It took {end-start} sec.')

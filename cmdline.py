@@ -13,7 +13,8 @@ def start():
                     """)
         tool_choice = input("Enter your choice: ").strip()
         if tool_choice not in ['1', '2', '3', 'q']:
-            print("Please choose one of the four actions by writing its corresponding number")
+            print("Please choose one of the four actions by writing "
+                  "its corresponding number")
         else:
             break
     return tool_choice

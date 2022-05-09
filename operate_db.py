@@ -1,5 +1,3 @@
-import psycopg2
-import fill
 import template_sql as template_sql
 
 
@@ -216,7 +214,8 @@ def pre_search(db_connection):
 
     if answer == 'b':
         table = input("What table do you want to search in: ")
-        print(f'Available cols: {list_cols(db_connection, table)} ')
+        cols_dic = cols_info(db_connection, table)
+        print(f'Available cols: {list(cols_dic.keys())}')
         cond = input("What do you want to search? Please provide in SQL format: ")
         res = search(db_connection, table, cond)
         return res
