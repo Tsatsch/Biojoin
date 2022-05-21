@@ -1,4 +1,8 @@
+import time
+
 import template_sql as template_sql
+import fill
+import progressbar
 
 
 def list_tables(db_connection):
@@ -7,6 +11,67 @@ def list_tables(db_connection):
     cur.execute("""SELECT table_name FROM information_schema.tables
            WHERE table_schema = 'public'""")
     return [value[0] for value in cur.fetchall()]
+
+
+def reset(db_connection):
+    tables = list_tables(db_connection)
+    cur = db_connection.cursor()
+    # delete all tables
+    if len(tables) > 0:
+        querry = 'DROP table '
+        for table in tables:
+            querry += table + ", "
+        querry = querry[:-2] + ";"
+        cur.execute(querry)
+        db_connection.commit()
+    if len(list_tables(db_connection)) == 0:
+        print("Reseted")
+
+    # create new tables
+    cur.execute(open("ddl.sql", "r").read())
+    db_connection.commit()
+    # fill db
+    widgets = [
+        '\x1b[33mColorful example\x1b[39m',
+        progressbar.Percentage(),
+        progressbar.Bar(marker='\x1b[32m#\x1b[39m'),
+    ]
+    bar = progressbar.ProgressBar(widgets=widgets, max_value=5).start()
+    counter = 0
+    start = time.time()
+
+    merged = fill.merge('data/disease_OMIM.txt', 'data/gene_OMIM.txt', 'disease_OMIM_ID')
+    merged.to_csv('data/merged.txt', sep="	", index=False)
+    head1, cont1 = fill.parse_tsv('data/Homo_sapiens_gene_info.txt')
+    fill.fill_database(db_connection, "gene", head1, cont1)
+    counter += 1
+    bar.update(counter)
+    head2, cont2 = fill.parse_tsv('data/SNP.txt')
+    fill.fill_database(db_connection, "dbsnp", head2, cont2)
+    counter += 1
+    bar.update(counter)
+    head3, cont3 = fill.parse_tsv('data/merged.txt')
+    headers_disease = ['DiseaseName', 'DiseaseID', 'AltDiseaseIDs']
+    cont4 = fill.parse_xml('data/CTD_diseases.xml', headers_disease)
+    headers_disease_gene = ['DiseaseName', 'DiseaseID', 'AltDiseaseIDs', 'GeneSymb']
+    disease_gene_content = fill.smart_merge_disease(disease_data=cont4, omim_data=cont3)
+    fill.fill_database(db_connection, "disease_genes", headers_disease_gene, disease_gene_content)
+    counter += 1
+    bar.update(counter)
+    headers_drug = ['ChemicalName', 'ChemicalID', 'ParentIDs']
+    cont6 = fill.parse_xml('data/CTD_chemicals.xml', headers_drug)
+    fill.fill_database(db_connection, "drug", headers_drug, cont6)
+    counter += 1
+    bar.update(counter)
+    head7, cont7 = fill.parse_tsv('data/DCh-Miner_miner-disease-chemical.tsv')
+    fill.fill_database(db_connection, "mesh_drug", head7, cont7)
+    counter += 1
+    bar.update(counter)
+
+    end = time.time()
+    bar.finish()
+    print(f'Insert finished. It took {end - start} sec.')
+    print(f'Available tables: {list_tables(db_connection)}')
 
 
 def cols_info(db_connection, table):
@@ -57,7 +122,7 @@ def pre_update(db_connection):
                     "\'" not in user_input:
                 user_input = f'\'{user_input}\''
             elif coltype == 'character varying' and \
-                '\"' in user_input:
+                    '\"' in user_input:
                 user_input = user_input.replace('\"', '')
                 user_input = f'\'{user_input}\''
             content += f'{colname}={user_input}, '
@@ -74,7 +139,7 @@ def pre_update(db_connection):
                     "\'" not in user_input:
                 user_input = f'\'{user_input}\''
             elif coltype == 'character varying' and \
-                '\"' in user_input:
+                    '\"' in user_input:
                 user_input = user_input.replace('\"', '')
                 user_input = f'\'{user_input}\''
             content += f'{user_input}, '

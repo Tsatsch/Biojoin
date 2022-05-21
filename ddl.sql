@@ -43,12 +43,12 @@ CREATE TABLE MESH_DRUG (
      PRIMARY KEY (id)
 );
 
-CREATE TABLE DISEASE (
-    disease_name varchar,
-    id varchar, 
-    alt_id varchar,
-    PRIMARY KEY (id)
-);
+-- CREATE TABLE DISEASE (
+--     disease_name varchar,
+--     id varchar,
+--     alt_id varchar,
+--     PRIMARY KEY (id)
+-- );
 
 CREATE TABLE DISEASE_GENES (
     disease_name varchar,

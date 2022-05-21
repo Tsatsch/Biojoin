@@ -10,9 +10,10 @@ def start():
                     2. Update the database
                     3. Delete from the database
                     q. Quit 
+                    rr. reset or/and setup new database
                     """)
         tool_choice = input("Enter your choice: ").strip()
-        if tool_choice not in ['1', '2', '3', 'q']:
+        if tool_choice not in ['1', '2', '3', 'q', 'rr']:
             print("Please choose one of the four actions by writing "
                   "its corresponding number")
         else:
@@ -29,6 +30,8 @@ def action(config, user_choice):
         operate_db.pre_update(conn)
     elif user_choice == '3':
         operate_db.pre_delete(conn)
+    elif user_choice == 'rr':
+        operate_db.reset(conn)
 
 
 def end():
