@@ -1,7 +1,8 @@
 import io
 import json
 import time
-
+import xml.etree.ElementTree as et
+import itertools
 import psycopg2
 import pandas as pd
 
@@ -25,20 +26,42 @@ def connect_db(config_path):
     return connection
 
 
-def parse_data(file):
+def parse_tsv(file):
     """
     :param file: TSV to parse
     :return: headers list and content list
     """
 
-    csv_content = []
+    content = []
 
     with open(file) as f:
         headers = f.readline().strip().split("	")
         all_lines = f.readlines()
         for line in all_lines:
-            csv_content.append(line.strip().split("	"))
-    return headers, csv_content
+            content.append(line.strip().split("	"))
+    return headers, content
+
+
+def parse_xml(file, headers):
+    """
+    :param file: xml to parse and headers to consider only
+    :return: headers list and content list
+    """
+    root_node = et.parse(file).getroot()
+    
+    xml_content = []
+    # find longest xml element to get all possible headers
+    for entry in root_node:
+        single_row = []
+        for el in entry:
+            if el.tag in headers:
+                single_row.append(el.text)
+        if len(single_row) < len(headers): # if no alt_symb
+            single_row.append(None)    
+        xml_content.append(single_row)
+        
+        
+    return xml_content
 
 
 def merge(file1_path, file2_path, merge_on):
@@ -48,6 +71,58 @@ def merge(file1_path, file2_path, merge_on):
     return pd.merge(file1, file2, on=merge_on, how='outer')
 
 
+def smart_merge_disease(disease_data, omim_data):
+    """ from CTD diseases we obtain the OMIM id and 
+        from OMIM get the gene_sysmb to add to CTD diseses
+    :param contnent: insertion of 2d lists of content
+    :return: headers list and content list of merged datastrcutre   
+    """
+    full_disease_data = []
+    for disease in disease_data:
+        # if omim is in id (isted of mesh)
+        if 'OMIM' in disease[1]:
+            disease_omim_id = disease[1].split(':')[1]
+            for omim in omim_data:
+                    if omim[0] == disease_omim_id:
+                        full_single_disease = disease.copy()
+                        full_single_disease.append(omim[2])
+                        full_disease_data.append(full_single_disease)
+         
+        omim_alternatives = None
+        # if omim in alternative ids
+        if disease[2] is not None:
+            alternatives = disease[2].split("|")
+            omim_alternatives = [omim.split(':')[1] for omim in alternatives if 'OMIM:' in omim]
+            if len(omim_alternatives) > 0:
+                for omim in omim_data:
+                    if omim[0] in omim_alternatives:
+                        full_single_disease = disease.copy()
+                        full_single_disease.append(omim[2])
+                        full_disease_data.append(full_single_disease)
+        else:
+            # no omim in id or alternative ids
+            # here we had an issue that on one side we can have same OMIM or MESH but different Gene symbols, so disease_id (OMIM or Mesh) + genesymbol 
+            # should be both primary keys to avoid it
+            # on the other hand, sometimes we dont have omim at all (neither in disease_id nor in alternatives), so for some entries genesymbol is None which 
+            # violates not-null constraint of primary key, so we cannot make both disease id and gene symbol PK
+            # what to do?
+            # - mock value of gene id e.g. 'NONE'
+            single_disease_no_omim = disease.copy()
+            single_disease_no_omim.append('None')
+            full_disease_data.append(single_disease_no_omim)    
+             
+    
+    # remove duplicated entries (can happen if different omims point at same gene
+    # from https://blog.finxter.com/how-to-remove-duplicates-from-a-python-list-of-lists/
+    dup_free_full_disease_data = []
+    dup_free_set = set()
+    for x in full_disease_data:
+        if tuple(x) not in dup_free_set:
+            dup_free_full_disease_data.append(x)
+            dup_free_set.add(tuple(x))
+    
+    return dup_free_full_disease_data
+    
 def clean_csv_value(value):
     """ remove all non-visible \n in csv before inserting smth"""
     if value is None:
@@ -55,16 +130,16 @@ def clean_csv_value(value):
     return str(value).replace('\n', '\\n')
 
 
-def fill_database(db_connection, table, headers, csv_content):
+def fill_database(db_connection, table, headers, data):
     cur = db_connection.cursor()
     # list of dictionaries with column names as keys and
     # value as row values
     q_args = []
 
     FROM = 0
-    TILL = len(csv_content)
+    TILL = len(data)
 
-    for line in csv_content[FROM:TILL]:
+    for line in data[FROM:TILL]:
         q_dict_arg = {}
         for key, value in zip(headers, line):
             q_dict_arg[key] = value
@@ -88,19 +163,35 @@ def fill_database(db_connection, table, headers, csv_content):
 
 
 if __name__ == '__main__':
-    merged = merge('data/disease_OMIM.txt', 'data/gene_OMIM.txt', 'disease_OMIM_ID')
-    merged.to_csv('data/merged.txt', sep="	", index=False)
-    head1, cont1 = parse_data('data/Homo_sapiens_gene_info.txt')
-    head2, cont2 = parse_data('data/SNP.txt')
-    head3, cont3 = parse_data('data/merged.txt')
+    # merged = merge('data/disease_OMIM.txt', 'data/gene_OMIM.txt', 'disease_OMIM_ID')
+    # merged.to_csv('data/merged.txt', sep="	", index=False)
+    #head1, cont1 = parse_tsv('data/Homo_sapiens_gene_info.txt')
+    # head2, cont2 = parse_tsv('data/SNP.txt')
+    head3, cont3 = parse_tsv('data/merged.txt')
+    headers_disease = ['DiseaseName', 'DiseaseID', 'AltDiseaseIDs']
+    cont4 = parse_xml('data/CTD_diseases.xml', headers_disease)
+    headers_disease_gene = ['DiseaseName', 'DiseaseID', 'AltDiseaseIDs', 'GeneSymb']
+    disease_gene_content = smart_merge_disease(disease_data=cont4, omim_data=cont3)
+
+    # cont4 = parse_xml('data/CTD_diseases.xml', headers_disease)
+    # headers_drug = ['ChemicalName', 'ChemicalID', 'ParentIDs']
+    # cont5 = parse_xml('data/CTD_chemicals.xml', headers_drug)
+    # head6, cont6 = parse_tsv('data/DCh-Miner_miner-disease-chemical.tsv')
 
     start = time.time()
     conn = connect_db("config.json")
-    fill_database(conn, "gene", head1, cont1)
-    conn = connect_db("config.json")
-    fill_database(conn, "dbsnp", head2, cont2)
-    conn = connect_db("config.json")
-    fill_database(conn, "omim", head3, cont3)
+    fill_database(conn, "disease_genes", headers_disease_gene, disease_gene_content)
+    
+    
+    # fill_database(conn, "gene", head1, cont1)
+    # conn = connect_db("config.json")
+    # fill_database(conn, "dbsnp", head2, cont2)
+    # conn = connect_db("config.json")
+    # fill_database(conn, "omim", head3, cont3)
+    # fill_database(conn, "disease", headers_disease, cont4)
+    # fill_database(conn, "drug", headers_drug, cont5)
+    # fill_database(conn, "mesh_drug", head6, cont6)
+    
     end = time.time()
     print("Insert finished")
     print(f'It took {end-start} sec.')
