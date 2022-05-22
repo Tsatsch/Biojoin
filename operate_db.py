@@ -13,6 +13,14 @@ def list_tables(db_connection):
     return [value[0] for value in cur.fetchall()]
 
 
+def get_table_size(db_connection, table_name):
+    """ get number of rows in a given table"""
+    cur = db_connection.cursor()
+    query = f'SELECT count(*) FROM {table_name};'
+    cur.execute(query)
+    return cur.fetchone()[0]
+
+
 def reset(db_connection):
     tables = list_tables(db_connection)
     cur = db_connection.cursor()
@@ -25,14 +33,14 @@ def reset(db_connection):
         cur.execute(querry)
         db_connection.commit()
     if len(list_tables(db_connection)) == 0:
-        print("Reseted")
+        print("Tables deleted")
 
     # create new tables
     cur.execute(open("ddl.sql", "r").read())
     db_connection.commit()
     # fill db
     widgets = [
-        '\x1b[33mColorful example\x1b[39m',
+        '\x1b[33mCreation of new tables \x1b[39m',
         progressbar.Percentage(),
         progressbar.Bar(marker='\x1b[32m#\x1b[39m'),
     ]
@@ -71,7 +79,12 @@ def reset(db_connection):
     end = time.time()
     bar.finish()
     print(f'Insert finished. It took {end - start} sec.')
-    print(f'Available tables: {list_tables(db_connection)}')
+    # make table_name: size
+    table_size_str = ''
+    for table in list_tables(db_connection):
+        table_size_str += f'{table}: {get_table_size(db_connection, table)}' \
+                          f' Rows\n'
+    print(f'Available tables:\n{table_size_str}')
 
 
 def cols_info(db_connection, table):
