@@ -63,16 +63,12 @@ def reset(db_connection):
     cont4 = fill.parse_xml('data/CTD_diseases.xml', headers_disease)
     headers_disease_gene = ['DiseaseName', 'DiseaseID', 'AltDiseaseIDs', 'GeneSymb']
     disease_gene_content = fill.smart_merge_disease(disease_data=cont4, omim_data=cont3)
-    fill.fill_database(db_connection, "disease_genes", headers_disease_gene, disease_gene_content)
+    fill.fill_database(db_connection, "disease", headers_disease_gene, disease_gene_content)
     counter += 1
     bar.update(counter)
-    headers_drug = ['ChemicalName', 'ChemicalID', 'ParentIDs']
-    cont6 = fill.parse_xml('data/CTD_chemicals.xml', headers_drug)
-    fill.fill_database(db_connection, "drug", headers_drug, cont6)
-    counter += 1
-    bar.update(counter)
-    head7, cont7 = fill.parse_tsv('data/DCh-Miner_miner-disease-chemical.tsv')
-    fill.fill_database(db_connection, "mesh_drug", head7, cont7)
+    headers_chem_dis = ['ChemicalName', 'ChemicalID', 'DiseaseName', 'DiseaseID']
+    cont6 = fill.parseCTO_tsv('data/CTD_chemicals_diseases.tsv')
+    fill.fill_database(db_connection, "disease_drug", headers_chem_dis, cont6)
     counter += 1
     bar.update(counter)
 

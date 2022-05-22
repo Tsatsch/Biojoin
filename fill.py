@@ -1,8 +1,8 @@
 import io
 import json
-import time
 import xml.etree.ElementTree as et
-import itertools
+
+import progressbar
 import psycopg2
 import pandas as pd
 
@@ -26,6 +26,33 @@ def connect_db(config_path):
     return connection
 
 
+def parseCTO_tsv(file):
+    """
+        :param file: TSV to parse
+        :return: headers list and content list
+        for now a bit hard-coded headers, needs to be fixed later
+        """
+    content = []
+    with open(file) as f:
+        all_data = f.readlines()
+        for line in all_data:
+            if not line.startswith("#"):
+                single_row_splitted = line.strip().split('	')
+                single_row_filtered = [single_row_splitted[0], single_row_splitted[1],
+                                       single_row_splitted[3], single_row_splitted[4]]
+                content.append(single_row_filtered)
+
+    # remove duplicates
+    dup_free = []
+    dup_free_set = set()
+    for x in content:
+        if tuple(x) not in dup_free_set:
+            dup_free.append(x)
+            dup_free_set.add(tuple(x))
+
+    return dup_free
+
+
 def parse_tsv(file):
     """
     :param file: TSV to parse
@@ -35,32 +62,31 @@ def parse_tsv(file):
     content = []
 
     with open(file) as f:
-        headers = f.readline().strip().split("	")
+        head = f.readline().strip().split("	")
         all_lines = f.readlines()
         for line in all_lines:
             content.append(line.strip().split("	"))
-    return headers, content
+    return head, content
 
 
-def parse_xml(file, headers):
+def parse_xml(file, heads):
     """
-    :param file: xml to parse and headers to consider only
+    :param file: xml to parse
+    :param headers: XML tags/headers to consider only
     :return: headers list and content list
     """
     root_node = et.parse(file).getroot()
-    
     xml_content = []
     # find longest xml element to get all possible headers
     for entry in root_node:
         single_row = []
         for el in entry:
-            if el.tag in headers:
+            if el.tag in heads:
                 single_row.append(el.text)
-        if len(single_row) < len(headers): # if no alt_symb
-            single_row.append(None)    
+        if len(single_row) < len(heads):  # if no alt_symb
+            single_row.append(None)
         xml_content.append(single_row)
-        
-        
+
     return xml_content
 
 
@@ -74,7 +100,7 @@ def merge(file1_path, file2_path, merge_on):
 def smart_merge_disease(disease_data, omim_data):
     """ from CTD diseases we obtain the OMIM id and 
         from OMIM get the gene_sysmb to add to CTD diseses
-    :param contnent: insertion of 2d lists of content
+    :param content: insertion of 2d lists of content
     :return: headers list and content list of merged datastrcutre   
     """
     full_disease_data = []
@@ -83,11 +109,11 @@ def smart_merge_disease(disease_data, omim_data):
         if 'OMIM' in disease[1]:
             disease_omim_id = disease[1].split(':')[1]
             for omim in omim_data:
-                    if omim[0] == disease_omim_id:
-                        full_single_disease = disease.copy()
-                        full_single_disease.append(omim[2])
-                        full_disease_data.append(full_single_disease)
-         
+                if omim[0] == disease_omim_id:
+                    full_single_disease = disease.copy()
+                    full_single_disease.append(omim[2])
+                    full_disease_data.append(full_single_disease)
+
         omim_alternatives = None
         # if omim in alternative ids
         if disease[2] is not None:
@@ -109,10 +135,9 @@ def smart_merge_disease(disease_data, omim_data):
             # - mock value of gene id e.g. 'NONE'
             single_disease_no_omim = disease.copy()
             single_disease_no_omim.append('None')
-            full_disease_data.append(single_disease_no_omim)    
-             
-    
-    # remove duplicated entries (can happen if different omims point at same gene
+            full_disease_data.append(single_disease_no_omim)
+
+            # remove duplicated entries (can happen if different omims point at same gene
     # from https://blog.finxter.com/how-to-remove-duplicates-from-a-python-list-of-lists/
     dup_free_full_disease_data = []
     dup_free_set = set()
@@ -120,9 +145,10 @@ def smart_merge_disease(disease_data, omim_data):
         if tuple(x) not in dup_free_set:
             dup_free_full_disease_data.append(x)
             dup_free_set.add(tuple(x))
-    
+
     return dup_free_full_disease_data
-    
+
+
 def clean_csv_value(value):
     """ remove all non-visible \n in csv before inserting smth"""
     if value is None:
@@ -157,4 +183,3 @@ def fill_database(db_connection, table, headers, data):
     cur.copy_from(csv_file_like_object, f'{table}', sep='~')
     # commit request
     db_connection.commit()
-

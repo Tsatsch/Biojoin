@@ -25,23 +25,12 @@ CREATE TABLE Gene (
 
 -- CREATE TABLE OMIM (
 --  omim_id int,
---  omim_name varchar, 
+--  omim_name varchar,
 --  gene_symb varchar,
 --  PRIMARY KEY (omim_id, gene_symb)
 --  );
 
-CREATE TABLE MESH_DRUG (
-    mesh_id varchar,
-    drug_id varchar,
-    PRIMARY KEY (mesh_id, drug_id)
- );
 
- CREATE TABLE DRUG (
-     drug_name varchar,
-     id varchar,
-     parent_id varchar,
-     PRIMARY KEY (id)
-);
 
 -- CREATE TABLE DISEASE (
 --     disease_name varchar,
@@ -50,10 +39,18 @@ CREATE TABLE MESH_DRUG (
 --     PRIMARY KEY (id)
 -- );
 
-CREATE TABLE DISEASE_GENES (
+CREATE TABLE Disease (
     disease_name varchar,
-    id varchar, 
+    id varchar,
     alt_id varchar,
     gene_symb varchar,
     PRIMARY KEY (id, gene_symb)
 );
+
+CREATE TABLE Disease_Drug (
+    drug_name varchar ,
+    drug_id varchar,
+    disease_name varchar,
+    disease_id varchar,
+    PRIMARY KEY (drug_id, disease_id)
+ );
