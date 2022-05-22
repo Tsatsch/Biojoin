@@ -2,4 +2,4 @@
 __pycache__/
 .dccache
 /data*
-!/data/README.md
+!data/README.md

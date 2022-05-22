@@ -14,6 +14,7 @@ Course: KAIST Spring 2022, Bio-Information Processing (BiS332) by Prof. Doheon L
      <li><a href="#prerequisites">Getting Started</a>
     <li><a href="#getting-started">Getting Started</a>
     </li>
+    <li><a href="#data">Usage</a></li>
     <li><a href="#usage">Usage</a></li>
     <li><a href="#code">Code review</a></li>
     <li><a href="#contact">Contact</a></li>
@@ -58,6 +59,15 @@ pip install -r /path/to/requirements.txt
      - password for the database (db_pw)
    - port is default = 5432 
 
+## Data
+Here are the primary sources that are ignored for this git repository because of licensing reasons. The data is freely available on the web. Here are the corresponding links:
+The main websites are: http://ctdbase.org/downloads/, https://snap.stanford.edu/biodata/datasets/10004/10004-DCh-Miner.html and data provided by the TA's for the course BiS332.
+- [CTD_chemicals.xml](http://ctdbase.org/reports/CTD_chemicals.xml.gz)
+- [CTD_diseases.xml](http://ctdbase.org/reports/CTD_diseases.xml.gz)
+- [DCh-Miner_miner-disease-chemical.tsv](https://snap.stanford.edu/biodata/datasets/10004/10004-DCh-Miner.html)
+- disease_OMIM.txt, gene_OMIM.txt, SNP.txt and Homo_sapiens_gene_info.txt were provided by TA's
+- merged.txt is self constructed using disease_OMIM.txt and gene_OMIM.txt 
+
 ## Usage
 ### Stage 1: Data extraction and integration
 Raw data was already provided by the course TAs and can be found in the data/ folder. Only the file merged.txt is generated in the script. 
@@ -78,6 +88,7 @@ python cmdline.py
 ## Technical Details
 
 ### Database architecture (DDL)
+For more information check the ddl.sql file. 
 ```sql
 CREATE TABLE dbSNP (
   snp_id int NOT NULL,
@@ -131,4 +142,3 @@ In the end, Homo_sapiens_gene_info.txt was inserted into the Gene table, SNP.txt
 ## Extra features
 - for update/adding new row the program automatically distinguish if the datatype of column is string or integer and corrects the user input to the right format
 - suggested tables and columns are obtained from the database everytime the program is launched, it means it is not hard-coded and is always up-to-date
-
