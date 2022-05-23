@@ -1,4 +1,4 @@
-CREATE TABLE dbSNP (                  
+CREATE TABLE SNP (
  snp_id int NOT NULL,
  snp_chr varchar,
  snp_pos varchar,
@@ -54,3 +54,15 @@ CREATE TABLE Disease_Drug (
     disease_id varchar,
     PRIMARY KEY (drug_id, disease_id)
  );
+
+CREATE TABLE Toxicity (
+    drug_id varchar,
+    tox decimal,
+    PRIMARY KEY (drug_id)
+);
+
+CREATE TABLE Prevalence (
+    disease_id varchar,
+    prevalence int,
+    PRIMARY KEY (disease_id)
+);

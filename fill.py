@@ -2,7 +2,9 @@ import io
 import json
 import xml.etree.ElementTree as et
 
-import progressbar
+from random import random
+from random import randrange
+
 import psycopg2
 import pandas as pd
 
@@ -90,10 +92,10 @@ def parse_xml(file, heads):
     return xml_content
 
 
-def merge(file1_path, file2_path, merge_on):
+def merge(file1_path, file2_path, file_separator, merge_on):
     """we want to merge disease Omim and geneOmim"""
-    file1 = pd.read_csv(file1_path, sep="	")
-    file2 = pd.read_csv(file2_path, sep="	")
+    file1 = pd.read_csv(file1_path, sep=file_separator)
+    file2 = pd.read_csv(file2_path, sep=file_separator)
     return pd.merge(file1, file2, on=merge_on, how='outer')
 
 
@@ -147,6 +149,36 @@ def smart_merge_disease(disease_data, omim_data):
             dup_free_set.add(tuple(x))
 
     return dup_free_full_disease_data
+
+
+def generate_random_mock_toxicity(db_connection):
+    """assigns a random toxicity percentage (0-100) to a drug"""
+    cur = db_connection.cursor()
+    cur.execute("""select drug_id from disease_drug;""")
+    all_drugs_ids = list(set([tupl[0] for tupl in cur.fetchall()]))
+
+    headers = ['drug_id', 'tox']
+    data = []
+    for drug in all_drugs_ids:
+        random_tox_percent = round(random() * 100, 2)
+        data.append([drug, random_tox_percent])
+
+    return headers, data
+
+
+def generate_random_mock_prevalence(db_connection):
+    """assigns a random Prevalence to a disease"""
+    cur = db_connection.cursor()
+    cur.execute("""select disease_id from disease_drug;""")
+    all_diseases_ids = list(set([tupl[0] for tupl in cur.fetchall()]))
+
+    headers = ['disease_id', 'prevalence']
+    data = []
+    for disease in all_diseases_ids:
+        random_tox_percent = randrange(1000, 10 ** 6)
+        data.append([disease, random_tox_percent])
+
+    return headers, data
 
 
 def clean_csv_value(value):

@@ -48,14 +48,14 @@ def reset(db_connection):
     counter = 0
     start = time.time()
 
-    merged = fill.merge('data/disease_OMIM.txt', 'data/gene_OMIM.txt', 'disease_OMIM_ID')
+    merged = fill.merge('data/disease_OMIM.txt', 'data/gene_OMIM.txt', "	", 'disease_OMIM_ID')
     merged.to_csv('data/merged.txt', sep="	", index=False)
     head1, cont1 = fill.parse_tsv('data/Homo_sapiens_gene_info.txt')
     fill.fill_database(db_connection, "gene", head1, cont1)
     counter += 1
     bar.update(counter)
     head2, cont2 = fill.parse_tsv('data/SNP.txt')
-    fill.fill_database(db_connection, "dbsnp", head2, cont2)
+    fill.fill_database(db_connection, "snp", head2, cont2)
     counter += 1
     bar.update(counter)
     head3, cont3 = fill.parse_tsv('data/merged.txt')
@@ -71,6 +71,12 @@ def reset(db_connection):
     fill.fill_database(db_connection, "disease_drug", headers_chem_dis, cont6)
     counter += 1
     bar.update(counter)
+    head7, cont7 = fill.generate_random_mock_toxicity(db_connection)
+    fill.fill_database(db_connection, 'toxicity', head7, cont7)
+    counter += 1
+    bar.update(counter)
+    head8, cont8 = fill.generate_random_mock_prevalence(db_connection)
+    fill.fill_database(db_connection, 'prevalence', head8, cont8)
 
     end = time.time()
     bar.finish()
@@ -260,11 +266,14 @@ def pre_search(db_connection):
                             2. Find all gene symbols located in the chromosome
                             3. Find all diseases associated with the SNP
                             4. Find all SNP IDs associated with the disease
+                            5. Find drug to treat given disease
+                            6. Find diseases that can be treated with your drug
+                            7. Find genes that are affected by given drug
                             q. Quit
                             """)
             answer = input("Enter your choice: ").strip()
-            if answer not in ['1', '2', '3', '4', 'q']:
-                print("Please choose between 1, 2, 3, 4 and q")
+            if answer not in ['1', '2', '3', '4', '5', '6', '7', 'q']:
+                print("Please choose between 1, 2, 3, 4, 5, 6, 7 and q")
             else:
                 break
 
@@ -283,6 +292,18 @@ def pre_search(db_connection):
             answer2 = input("Please provide a disease name: ")
             res = template_sql.find_snp(db_connection, answer2)
             print([value[0] for value in res])
+        elif answer == '5':
+            answer2 = input("Please provide a disease name: ")
+            res = template_sql.get_drugs(db_connection, answer2)
+            print(res)
+        elif answer == '6':
+            answer2 = input("Please provide a drug name: ")
+            res = template_sql.get_diseases(db_connection, answer2)
+            print(res)
+        elif answer == '7':
+            answer2 = input("Please provide a drug name: ")
+            res = template_sql.get_genes_from_drug(db_connection, answer2)
+            print(res)
         else:
             quit()
 
