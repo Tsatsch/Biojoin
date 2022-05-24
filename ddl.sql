@@ -19,6 +19,7 @@ CREATE TABLE Gene (
  gene_sum text,
  gene_type varchar,
  gene_mod_date date NOT NULL,
+ popularity float,
  PRIMARY KEY (gene_id)
 );
 

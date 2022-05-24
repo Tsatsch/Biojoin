@@ -44,20 +44,24 @@ def reset(db_connection):
         progressbar.Percentage(),
         progressbar.Bar(marker='\x1b[32m#\x1b[39m'),
     ]
-    bar = progressbar.ProgressBar(widgets=widgets, max_value=5).start()
+    bar = progressbar.ProgressBar(widgets=widgets, max_value=6).start()
     counter = 0
     start = time.time()
 
-    merged = fill.merge('data/disease_OMIM.txt', 'data/gene_OMIM.txt', "	", 'disease_OMIM_ID')
-    merged.to_csv('data/merged.txt', sep="	", index=False)
-    head1, cont1 = fill.parse_tsv('data/Homo_sapiens_gene_info.txt')
+    new_file = fill.generate_random_values_columns('data/Homo_sapiens_gene_info.txt', 'popularity')
+
+    head1, cont1 = fill.parse_tsv(new_file)
     fill.fill_database(db_connection, "gene", head1, cont1)
     counter += 1
     bar.update(counter)
+
     head2, cont2 = fill.parse_tsv('data/SNP.txt')
     fill.fill_database(db_connection, "snp", head2, cont2)
     counter += 1
     bar.update(counter)
+
+    merged = fill.merge('data/disease_OMIM.txt', 'data/gene_OMIM.txt', "	", 'disease_OMIM_ID')
+    merged.to_csv('data/merged.txt', sep="	", index=False)
     head3, cont3 = fill.parse_tsv('data/merged.txt')
     headers_disease = ['DiseaseName', 'DiseaseID', 'AltDiseaseIDs']
     cont4 = fill.parse_xml('data/CTD_diseases.xml', headers_disease)
@@ -66,17 +70,22 @@ def reset(db_connection):
     fill.fill_database(db_connection, "disease", headers_disease_gene, disease_gene_content)
     counter += 1
     bar.update(counter)
+
     headers_chem_dis = ['ChemicalName', 'ChemicalID', 'DiseaseName', 'DiseaseID']
     cont6 = fill.parseCTO_tsv('data/CTD_chemicals_diseases.tsv')
     fill.fill_database(db_connection, "disease_drug", headers_chem_dis, cont6)
     counter += 1
     bar.update(counter)
+
     head7, cont7 = fill.generate_random_mock_toxicity(db_connection)
     fill.fill_database(db_connection, 'toxicity', head7, cont7)
     counter += 1
     bar.update(counter)
+
     head8, cont8 = fill.generate_random_mock_prevalence(db_connection)
     fill.fill_database(db_connection, 'prevalence', head8, cont8)
+    counter += 1
+    bar.update(counter)
 
     end = time.time()
     bar.finish()

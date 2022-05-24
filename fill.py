@@ -7,6 +7,7 @@ from random import randrange
 
 import psycopg2
 import pandas as pd
+import csv
 
 
 def connect_db(config_path):
@@ -91,6 +92,27 @@ def parse_xml(file, heads):
 
     return xml_content
 
+
+def generate_random_values_columns(file_path, name_of_new_col):
+    with open(file_path) as f:
+        header = f.readline().strip().split('	')
+        reader = csv.reader(f, delimiter='	')
+        data = list(reader)
+
+    new_data = []
+    for value in data:
+        random_popularity = round(random() * 100, 2)
+        new_row = value
+        new_row.append(random_popularity)
+        new_data.append(new_row)
+
+    header.append(name_of_new_col)
+    new_file_path = file_path.split(".")[0]+"_random.txt"
+    with open(new_file_path, 'w') as f:
+        writer = csv.writer(f, delimiter='	')
+        writer.writerow(header)
+        writer.writerows(new_data)
+    return new_file_path
 
 def merge(file1_path, file2_path, file_separator, merge_on):
     """we want to merge disease Omim and geneOmim"""
