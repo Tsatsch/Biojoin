@@ -267,11 +267,14 @@ def pre_search(db_connection):
                             3. Find all diseases associated with the SNP
                             4. Find all SNP IDs associated with the disease
                             5. Drug-Diseases related templates
+                            6. Drug-Genes related templates
+                            7. Diseases-Genes related templates 
+                            8. Statistics
                             q. Quit
                             """)
             answer = input("Enter your choice: ").strip()
-            if answer not in ['1', '2', '3', '4', '5', 'q']:
-                print("Please choose between 1, 2, 3, 4, 5 and q")
+            if answer not in ['1', '2', '3', '4', '5', '6', '7', '8', 'q']:
+                print("Please choose between 1, 2, 3, 4, 5, 6, 7, 8 and q")
             else:
                 break
 
@@ -292,6 +295,12 @@ def pre_search(db_connection):
             print([value[0] for value in res])
         elif answer == '5':
             drug_disease(db_connection)
+        elif answer == '6':
+            drug_genes(db_connection)
+        elif answer == '7':
+            disease_genes(db_connection)
+        elif answer == '8':
+            db_statistics(db_connection)
         else:
             quit()
 
@@ -306,18 +315,83 @@ def pre_search(db_connection):
         quit()
 
 
+def db_statistics(db_connection):
+    while True:
+        print("""Choose a statistic?\n
+                        1. Statistics: Count number of diseases for each chromosome
+                        q. Quit
+                        """)
+        answer = input("Enter your choice: ").strip()
+        if answer not in ['1', 'q']:
+            print("Please choose between 1 and q")
+        else:
+            break
+
+    if answer == '1':
+        res = template_sql.stats_diseases_on_chr(db_connection)
+        print(res)
+    else:
+        quit()
+
+
+def disease_genes(db_connection):
+    while True:
+        print("""What template do you want to try out?\n
+                        1. Given chromosome number find associated diseases
+                        q. Quit
+                        """)
+        answer = input("Enter your choice: ").strip()
+        if answer not in ['1', 'q']:
+            print("Please choose between 1 and q")
+        else:
+            break
+
+    if answer == '1':
+        answer2 = input("Please provide a chromosome number: ")
+        res = template_sql.get_diseases_from_chr(db_connection, answer2)
+        print(res)
+    elif answer == '2':
+        res = template_sql.stats_diseases_on_chr(db_connection)
+        print(res)
+    else:
+        quit()
+
+
+def drug_genes(db_connection):
+    while True:
+        print("""What template do you want to try out?\n
+                        1. Find genes that are affected by given drug
+                        2. Find chromosomes that are affected by given drug
+                        q. Quit
+                        """)
+        answer = input("Enter your choice: ").strip()
+        if answer not in ['1', '2', 'q']:
+            print("Please choose between 1, 2, and q")
+        else:
+            break
+
+    if answer == '1':
+        answer2 = input("Please provide a drug name: ")
+        res = template_sql.get_genes_from_drug(db_connection, answer2)
+        print(res)
+    elif answer == '2':
+        answer2 = input("Please provide a drug name: ")
+        res = template_sql.get_chr_from_drug(db_connection, answer2)
+        print(res)
+    else:
+        quit()
+
+
 def drug_disease(db_connection):
     while True:
         print("""What template do you want to try out?\n
                         1. Find drug to treat given disease
                         2. Find diseases that can be treated with your drug
-                        3. Find genes that are affected by given drug
-                        4. Find chromosomes that are affected by given drug
                         q. Quit
                         """)
         answer = input("Enter your choice: ").strip()
-        if answer not in ['1', '2', '3', '4', 'q']:
-            print("Please choose between 1, 2, 3, 4 and q")
+        if answer not in ['1', '2', 'q']:
+            print("Please choose between 1, 2 and q")
         else:
             break
 
@@ -328,14 +402,6 @@ def drug_disease(db_connection):
     elif answer == '2':
         answer2 = input("Please provide a drug name: ")
         res = template_sql.get_diseases(db_connection, answer2)
-        print(res)
-    elif answer == '3':
-        answer2 = input("Please provide a drug name: ")
-        res = template_sql.get_genes_from_drug(db_connection, answer2)
-        print(res)
-    elif answer == '4':
-        answer2 = input("Please provide a drug name: ")
-        res = template_sql.get_chr_from_drug(db_connection, answer2)
         print(res)
     else:
         quit()
