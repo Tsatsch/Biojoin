@@ -1,5 +1,4 @@
 from collections import Counter
-import itertools
 
 
 def fancy_print(sql_resp):
@@ -230,3 +229,54 @@ def stats_diseases_on_chr(db_connection):
     for chromosome, counts in zip(all_chromosomes, stats):
         fancy_string += f'Chromosome {chromosome}: {counts}\n'
     return fancy_string[:-1]
+
+
+##what is the drug that can heal the most diseases (most universal drug)
+
+def add_values_in_dict(sample_dict, key, list_of_values):
+    ''' Append multiple values to a key in 
+        the given dictionary '''
+    if key not in sample_dict:
+        sample_dict[key] = list()
+    sample_dict[key].extend(list_of_values)
+    return sample_dict
+
+def stats_universal_drug(db_connection):
+    cur = db_connection.cursor()
+    
+   
+    cur.execute(f'SELECT disease_drug.disease_name, disease_drug.drug_name FROM disease_drug;')
+    answer = cur.fetchall()
+    
+
+    # decimal to float and tuple to dict
+    res_dict = {}
+    
+    for value in answer:
+        add_values_in_dict(res_dict, value[1], [value[0]])
+
+    len_dict ={}
+    
+
+    for key in res_dict:
+        len_dict[key] = len(res_dict[key])
+
+    # sort by values (by prevalence) descending      
+    
+
+    len_dict = {k: v for k, v in sorted(len_dict.items(),
+                                    key=lambda item: item[1], reverse=True)}
+
+    first_10 = list(len_dict.items())[:10]
+
+   
+    fancy_string = f"The most universal drugs:\n"
+    fancy_string += f'Num of Diseases it can treat | Drug name\n'
+    fancy_string += f"----------------------------------------\n"
+    for (topdrug,numdis) in first_10:
+            fancy_string += f'{numdis} | {topdrug}\n'
+        
+    return fancy_string
+
+   
+    

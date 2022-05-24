@@ -328,16 +328,20 @@ def db_statistics(db_connection):
     while True:
         print("""Choose a statistic?\n
                         1. Statistics: Count number of diseases for each chromosome
+                        2. Statistics: Drugs that can treat the most diseases
                         q. Quit
                         """)
         answer = input("Enter your choice: ").strip()
-        if answer not in ['1', 'q']:
-            print("Please choose between 1 and q")
+        if answer not in ['1', '2', 'q']:
+            print("Please choose between 1, 2 and q")
         else:
             break
 
     if answer == '1':
         res = template_sql.stats_diseases_on_chr(db_connection)
+        return res
+    elif answer == '2':
+        res = template_sql.stats_universal_drug(db_connection)
         return res
     else:
         quit()
