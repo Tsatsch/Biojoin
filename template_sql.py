@@ -84,12 +84,11 @@ def get_drugs(db_connection, disease_name):
         fancy_string = "Ops, no drugs found. We hope you will survive this!"
     else:
         fancy_string = "Use these drugs:\n"
-        fancy_string += f'ToxVal | '
-        fancy_string += f'Drug Name\n'
-        for (a,b) in first_5:
+        fancy_string += f'ToxVal | Drug Name\n'
+        fancy_string += f'------------------\n'
+        for (drug,tox) in first_5:
             # fancy_string += f'{k} with {v}% toxicity\n'
-            fancy_string += f'{b}  | '
-            fancy_string += f'{a}\n'
+            fancy_string += f'{tox}  | {drug}\n'
 
     return fancy_string
 
@@ -119,9 +118,11 @@ def get_diseases(db_connection, drug_name):
         fancy_string = "Ops, no diseases found. Why this drug even exist?"
     else:
         fancy_string = "These disease can be treated:\n"
-        for disease in first_5:
+        fancy_string += f'Prevalence | Diseases\n'
+        fancy_string += f'-----------------\n'
+        for (dis,pre) in first_5:
             # fancy_string += f'{drug[0]} with {drug[1]}% toxicity\n'
-            fancy_string += f'{disease[0]}\n'
+            fancy_string += f'{pre}   | {dis}\n'
 
     return fancy_string
 
@@ -193,13 +194,14 @@ def get_diseases_from_chr(db_connection, chr_nr):
     # sort by values (by prevalence) descending
     res_dict = {k: v for k, v in sorted(res_dict.items(),
                                         key=lambda item: item[1], reverse=True)}
-    print(list(res_dict.items())[:10])
+    
     first_5 = list(res_dict.items())[:5]
 
     if len(first_5) == 0:
         fancy_string = "Ops, no diseases found"
     else:
         fancy_string = f"These disease are assosiated with chromosome {chr_nr}:\n"
+        fancy_string += f"------------------------------------------------\n"
         for disease in first_5:
             # fancy_string += f'{drug[0]} with {drug[1]}% toxicity\n'
             fancy_string += f'{disease[0]}\n'
