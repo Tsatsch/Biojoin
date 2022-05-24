@@ -79,14 +79,16 @@ def get_drugs(db_connection, disease_name):
                                         key=lambda item: item[1], reverse=True)}
 
     first_5 = list(res_dict.items())[:5]
-
     if len(first_5) == 0:
         fancy_string = "Ops, no drugs found. We hope you will survive this!"
     else:
         fancy_string = "Use these drugs:\n"
-        for drug in first_5:
-            # fancy_string += f'{drug[0]} with {drug[1]}% toxicity\n'
-            fancy_string += f'{drug[0]}\n'
+        fancy_string += f'ToxVal | '
+        fancy_string += f'Drug Name\n'
+        for (a,b) in first_5:
+            # fancy_string += f'{k} with {v}% toxicity\n'
+            fancy_string += f'{b}  | '
+            fancy_string += f'{a}\n'
 
     return fancy_string
 
