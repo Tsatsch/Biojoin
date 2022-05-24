@@ -1,4 +1,5 @@
 from collections import Counter
+import itertools
 
 
 def fancy_print(sql_resp):
@@ -168,4 +169,57 @@ def get_chr_from_drug(db_connection, drug_name):
         for value in count:
             fancy_string += f'Chromosome {value[0]}: {value[1]} affected genes\n'
 
+    return fancy_string
+
+
+def get_diseases_from_chr(db_connection, chr_nr):
+    """ Given the chromosome number, find all the disease that
+    are associated with genes based on that chromosome. Filter the
+    output with 5 diseases with most prevalence"""
+    cur = db_connection.cursor()
+    chr_nr = preprocess_string(chr_nr)
+    cur.execute(f'SELECT D.id, D.disease_name, R.prevalence FROM disease as D JOIN '
+                f'(SELECT disease_id, prevalence FROM prevalence WHERE disease_id IN '
+                f'(SELECT disease_id FROM disease JOIN gene ON disease.gene_symb = gene.gene_symb '
+                f'WHERE gene.gene_chr = {chr_nr})) as R ON R.disease_id = D.id;')
+    answer = cur.fetchall()
+
+    res_dict = {}
+    for value in answer:
+        res_dict[value[1]] = int(value[2])
+
+    # sort by values (by prevalence) descending
+    res_dict = {k: v for k, v in sorted(res_dict.items(),
+                                        key=lambda item: item[1], reverse=True)}
+    print(list(res_dict.items())[:10])
+    first_5 = list(res_dict.items())[:5]
+
+    if len(first_5) == 0:
+        fancy_string = "Ops, no diseases found"
+    else:
+        fancy_string = f"These disease are assosiated with chromosome {chr_nr}:\n"
+        for disease in first_5:
+            # fancy_string += f'{drug[0]} with {drug[1]}% toxicity\n'
+            fancy_string += f'{disease[0]}\n'
+
+    return fancy_string
+
+
+def stats_diseases_on_chr(db_connection):
+    """ Statistics: Count number of diseases for each chromosome"""
+    cur = db_connection.cursor()
+    all_chromosomes = list(range(1, 23))
+    all_chromosomes.append('X')
+
+    stats = []
+    for chromosome in all_chromosomes:
+        chromosome = preprocess_string(str(chromosome))
+        cur.execute(f'SELECT count(*) FROM disease JOIN gene ON '
+                    f'disease.gene_symb = gene.gene_symb WHERE gene.gene_chr = {chromosome};')
+        answer = cur.fetchall()
+        stats.append(answer[0][0])
+
+    fancy_string = 'Chromosome-Diseases stats:\n'
+    for chromosome, counts in zip(all_chromosomes, stats):
+        fancy_string += f'Chromosome {chromosome}: {counts}\n'
     return fancy_string
