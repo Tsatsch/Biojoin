@@ -90,7 +90,7 @@ def get_drugs(db_connection, disease_name):
             # fancy_string += f'{k} with {v}% toxicity\n'
             fancy_string += f'{tox}  | {drug}\n'
 
-    return fancy_string
+    return fancy_string[:-1]
 
 
 def get_diseases(db_connection, drug_name):
@@ -124,34 +124,37 @@ def get_diseases(db_connection, drug_name):
             # fancy_string += f'{drug[0]} with {drug[1]}% toxicity\n'
             fancy_string += f'{pre}   | {dis}\n'
 
-    return fancy_string
+    return fancy_string[:-1]
 
 
 def get_genes_from_drug(db_connection, drug_name):
     """Given a drug name, print all the genes that are affected"""
     cur = db_connection.cursor()
     drug_name = preprocess_string(drug_name)
-    cur.execute(f'SELECT disease.gene_symb from disease WHERE disease.id IN '
-                f'(SELECT disease_drug.disease_id FROM  '
-                f'disease_drug JOIN prevalence ON disease_drug.disease_id = prevalence.disease_id '
-                f'WHERE disease_drug.drug_name = {drug_name});')
-    answer = [gene[0] for gene in cur.fetchall()]
-    # decimal to float and tuple to dict
-    clean_answer = []
+    cur.execute(f'select G.gene_symb, G.popularity from gene G where G.gene_symb IN '
+                f'(select D.gene_symb from disease D JOIN disease_drug DD  '
+                f'ON D.id = DD.disease_id WHERE DD.drug_name = {drug_name});')
+    answer = cur.fetchall()
+    res_dict = {}
     for value in answer:
-        if value != "None":
-            clean_answer.append(value)
+        res_dict[value[0]] = float(value[1])
+    # decimal to float and tuple to dict
+    res_dict = {k: v for k, v in sorted(res_dict.items(),
+                                        key=lambda item: item[1], reverse=True)}
 
-    clean_answer = sorted(clean_answer)
-    if len(clean_answer) == 0:
+    first_10 = list(res_dict.items())[:10]
+
+    if len(first_10) == 0:
         fancy_string = "Ops, no genes found. Why this drug even exist?"
     else:
         fancy_string = "These genes are affected:\n"
-        for gene in clean_answer:
-            # fancy_string += f'{drug[0]} with {drug[1]}% toxicity\n'
-            fancy_string += f'{gene}, '
+        fancy_string += f'Popularity | Gene Symbols\n'
+        fancy_string += f'-----------------\n'
+        for (gene,pop) in first_10:
+            fancy_string += f'{pop}      | {gene}\n'
 
-    return fancy_string[:-2]
+    return fancy_string[:-1]
+
 
 
 def get_chr_from_drug(db_connection, drug_name):
@@ -172,7 +175,7 @@ def get_chr_from_drug(db_connection, drug_name):
         for value in count:
             fancy_string += f'Chromosome {value[0]}: {value[1]} affected genes\n'
 
-    return fancy_string
+    return fancy_string[:-1]
 
 
 def get_diseases_from_chr(db_connection, chr_nr):
@@ -206,7 +209,7 @@ def get_diseases_from_chr(db_connection, chr_nr):
             # fancy_string += f'{drug[0]} with {drug[1]}% toxicity\n'
             fancy_string += f'{disease[0]}\n'
 
-    return fancy_string
+    return fancy_string[:-1]
 
 
 def stats_diseases_on_chr(db_connection):
@@ -226,4 +229,4 @@ def stats_diseases_on_chr(db_connection):
     fancy_string = 'Chromosome-Diseases stats:\n'
     for chromosome, counts in zip(all_chromosomes, stats):
         fancy_string += f'Chromosome {chromosome}: {counts}\n'
-    return fancy_string
+    return fancy_string[:-1]
