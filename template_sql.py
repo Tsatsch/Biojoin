@@ -9,13 +9,19 @@ def fancy_print(sql_resp):
     return fancy_resp
 
 
+def preprocess_string(user_input):
+    """add '' if needed for string values to apply in sql query"""
+    if "\'" not in user_input or '\"' in user_input:
+        user_input = user_input.replace('\"', '')
+        user_input = f'\'{user_input}\''
+    return user_input
+
+
 def get_gene_info(db_connection, gene_symbol):
     """ Given a gene symbol, find all gene
     information stored in the gene table"""
     cur = db_connection.cursor()
-    if "\'" not in gene_symbol or '\"' in gene_symbol:
-        gene_symbol = gene_symbol.replace('\"', '')
-        gene_symbol = f'\'{gene_symbol}\''
+    gene_symbol = preprocess_string(gene_symbol)
     cur.execute(f'SELECT * FROM gene WHERE gene_symb = {gene_symbol};')
     res = [value for value in cur.fetchall()]
     return res
@@ -25,9 +31,7 @@ def get_genes_on_chromosome(db_connection, chromosome):
     """ Given a chromosome id, find all gene
     symbols located in the chromosome"""
     cur = db_connection.cursor()
-    if "\'" not in chromosome or '\"' in chromosome:
-        chromosome = chromosome.replace('\"', '')
-        chromosome = f'\'{chromosome}\''
+    chromosome = preprocess_string(chromosome)
     cur.execute(f'SELECT gene_symb FROM gene WHERE gene_chr = {chromosome};')
     res = [value for value in cur.fetchall()]
     return res
@@ -37,8 +41,7 @@ def find_diseases(db_connection, snp_id):
     """Given a SNP ID, find all diseases
     associated with the SNP"""
     cur = db_connection.cursor()
-    if "\'" in snp_id or '\"' in snp_id:
-        snp_id = snp_id.replace('\"', '').replace("'", '')
+    snp_id = preprocess_string(snp_id)
     cur.execute(f'SELECT omim_name FROM omim WHERE omim.gene_symb IN '
                 f'(SELECT gene_symb FROM dbsnp WHERE snp_id = {snp_id});')
     res = [value for value in cur.fetchall()]
@@ -49,9 +52,7 @@ def find_snp(db_connection, disease_name):
     """Given a disease name, find all SNP IDs
     associated with the disease"""
     cur = db_connection.cursor()
-    if "\'" not in disease_name or '\"' in disease_name:
-        disease_name = disease_name.replace('\"', '')
-        disease_name = f'\'{disease_name}\''
+    disease_name = preprocess_string(disease_name)
     cur.execute(f'SELECT snp_id FROM dbsnp WHERE dbsnp.gene_symb IN '
                 f'(SELECT gene_symb FROM omim WHERE omim_name = {disease_name});')
     res = [value for value in cur.fetchall()]
@@ -63,9 +64,7 @@ def get_drugs(db_connection, disease_name):
         we filter the answer with 10 best drugs accordint to their toxicity
         --> see toxicity table"""
     cur = db_connection.cursor()
-    if "\'" not in disease_name or '\"' in disease_name:
-        disease_name = disease_name.replace('\"', '')
-        disease_name = f'\'{disease_name}\''
+    disease_name = preprocess_string(disease_name)
     cur.execute(f'SELECT disease_drug.drug_name, toxicity.tox FROM disease_drug '
                 f'JOIN toxicity ON disease_drug.drug_id = toxicity.drug_id '
                 f'WHERE disease_drug.disease_name = {disease_name};')
@@ -97,9 +96,7 @@ def get_diseases(db_connection, drug_name):
         we filter the answer with 10 most prevalence (infected people) diseases
         --> see prevalence table"""
     cur = db_connection.cursor()
-    if "\'" not in drug_name or '\"' in drug_name:
-        drug_name = drug_name.replace('\"', '')
-        drug_name = f'\'{drug_name}\''
+    drug_name = preprocess_string(drug_name)
     cur.execute(f'SELECT disease_drug.disease_name, prevalence.prevalence FROM disease_drug '
                 f'JOIN prevalence ON disease_drug.disease_id = prevalence.disease_id '
                 f'WHERE disease_drug.drug_name = {drug_name};')
@@ -129,9 +126,7 @@ def get_diseases(db_connection, drug_name):
 def get_genes_from_drug(db_connection, drug_name):
     """Given a drug name, print all the genes that are affected"""
     cur = db_connection.cursor()
-    if "\'" not in drug_name or '\"' in drug_name:
-        drug_name = drug_name.replace('\"', '')
-        drug_name = f'\'{drug_name}\''
+    drug_name = preprocess_string(drug_name)
     cur.execute(f'SELECT disease.gene_symb from disease WHERE disease.id IN '
                 f'(SELECT disease_drug.disease_id FROM  '
                 f'disease_drug JOIN prevalence ON disease_drug.disease_id = prevalence.disease_id '
@@ -158,9 +153,7 @@ def get_genes_from_drug(db_connection, drug_name):
 def get_chr_from_drug(db_connection, drug_name):
     """Given a drug name, print the most common chromosomes that are affected"""
     cur = db_connection.cursor()
-    if "\'" not in drug_name or '\"' in drug_name:
-        drug_name = drug_name.replace('\"', '')
-        drug_name = f'\'{drug_name}\''
+    drug_name = preprocess_string(drug_name)
     cur.execute(f'SELECT gene.gene_chr FROM gene WHERE gene.gene_symb IN '
                 f'(SELECT disease.gene_symb from disease WHERE disease.id IN '
                 f'(SELECT disease_drug.disease_id FROM disease_drug '
