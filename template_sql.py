@@ -1,4 +1,4 @@
-import fill
+from collections import Counter
 
 
 def fancy_print(sql_resp):
@@ -153,3 +153,26 @@ def get_genes_from_drug(db_connection, drug_name):
             fancy_string += f'{gene}, '
 
     return fancy_string[:-2]
+
+
+def get_chr_from_drug(db_connection, drug_name):
+    """Given a drug name, print the most common chromosomes that are affected"""
+    cur = db_connection.cursor()
+    if "\'" not in drug_name or '\"' in drug_name:
+        drug_name = drug_name.replace('\"', '')
+        drug_name = f'\'{drug_name}\''
+    cur.execute(f'SELECT gene.gene_chr FROM gene WHERE gene.gene_symb IN '
+                f'(SELECT disease.gene_symb from disease WHERE disease.id IN '
+                f'(SELECT disease_drug.disease_id FROM disease_drug '
+                f'WHERE disease_drug.drug_name = {drug_name}));')
+    answer = [gene[0] for gene in cur.fetchall()]
+    if len(answer) == 0:
+        fancy_string = "Ops, no chromosomes were found. Why this drug even exist?"
+    else:
+        count = Counter(answer)
+        count = count.most_common(3)
+        fancy_string = "These chromosomes are most commonly affected:\n"
+        for value in count:
+            fancy_string += f'Chromosome {value[0]}: {value[1]} affected genes\n'
+
+    return fancy_string
