@@ -289,27 +289,27 @@ def pre_search(db_connection):
 
         if answer == '1':
             answer2 = input("Please provide a gene symbol: ")
-            print(template_sql.get_gene_info(db_connection, answer2)[0])
+            return template_sql.get_gene_info(db_connection, answer2)[0]
         elif answer == '2':
             answer2 = input("Please provide a chromosome number: ")
             res = template_sql.get_genes_on_chromosome(db_connection, answer2)
-            print([value[0] for value in res])
+            return [value[0] for value in res]
         elif answer == '3':
             answer2 = input("Please provide a SNP id: ")
             res = template_sql.find_diseases(db_connection, answer2)
-            print([value[0] for value in res])
+            return [value[0] for value in res]
         elif answer == '4':
             answer2 = input("Please provide a disease name: ")
             res = template_sql.find_snp(db_connection, answer2)
-            print([value[0] for value in res])
+            return [value[0] for value in res]
         elif answer == '5':
-            drug_disease(db_connection)
+            return drug_disease(db_connection)
         elif answer == '6':
-            drug_genes(db_connection)
+            return drug_genes(db_connection)
         elif answer == '7':
-            disease_genes(db_connection)
+            return disease_genes(db_connection)
         elif answer == '8':
-            db_statistics(db_connection)
+            return db_statistics(db_connection)
         else:
             quit()
 
@@ -338,7 +338,7 @@ def db_statistics(db_connection):
 
     if answer == '1':
         res = template_sql.stats_diseases_on_chr(db_connection)
-        print(res)
+        return res
     else:
         quit()
 
@@ -358,10 +358,10 @@ def disease_genes(db_connection):
     if answer == '1':
         answer2 = input("Please provide a chromosome number: ")
         res = template_sql.get_diseases_from_chr(db_connection, answer2)
-        print(res)
+        return res
     elif answer == '2':
         res = template_sql.stats_diseases_on_chr(db_connection)
-        print(res)
+        return res
     else:
         quit()
 
@@ -382,11 +382,11 @@ def drug_genes(db_connection):
     if answer == '1':
         answer2 = input("Please provide a drug name: ")
         res = template_sql.get_genes_from_drug(db_connection, answer2)
-        print(res)
+        return res
     elif answer == '2':
         answer2 = input("Please provide a drug name: ")
         res = template_sql.get_chr_from_drug(db_connection, answer2)
-        print(res)
+        return res
     else:
         quit()
 
@@ -407,11 +407,11 @@ def drug_disease(db_connection):
     if answer == '1':
         answer2 = input("Please provide a disease name: ")
         res = template_sql.get_drugs(db_connection, answer2)
-        print(res)
+        return res
     elif answer == '2':
         answer2 = input("Please provide a drug name: ")
         res = template_sql.get_diseases(db_connection, answer2)
-        print(res)
+        return res
     else:
         quit()
 
