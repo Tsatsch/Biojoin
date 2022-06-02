@@ -85,7 +85,7 @@ def get_drugs(db_connection, disease_name):
         fancy_string = "Use these drugs:\n"
         fancy_string += f'ToxVal | Drug Name\n'
         fancy_string += f'------------------\n'
-        for (drug,tox) in first_5:
+        for (drug, tox) in first_5:
             # fancy_string += f'{k} with {v}% toxicity\n'
             fancy_string += f'{tox}  | {drug}\n'
 
@@ -119,7 +119,7 @@ def get_diseases(db_connection, drug_name):
         fancy_string = "These disease can be treated:\n"
         fancy_string += f'Prevalence | Diseases\n'
         fancy_string += f'-----------------\n'
-        for (dis,pre) in first_5:
+        for (dis, pre) in first_5:
             # fancy_string += f'{drug[0]} with {drug[1]}% toxicity\n'
             fancy_string += f'{pre}   | {dis}\n'
 
@@ -149,11 +149,10 @@ def get_genes_from_drug(db_connection, drug_name):
         fancy_string = "These genes are affected:\n"
         fancy_string += f'Popularity | Gene Symbols\n'
         fancy_string += f'-----------------\n'
-        for (gene,pop) in first_10:
+        for (gene, pop) in first_10:
             fancy_string += f'{pop}      | {gene}\n'
 
     return fancy_string[:-1]
-
 
 
 def get_chr_from_drug(db_connection, drug_name):
@@ -196,7 +195,7 @@ def get_diseases_from_chr(db_connection, chr_nr):
     # sort by values (by prevalence) descending
     res_dict = {k: v for k, v in sorted(res_dict.items(),
                                         key=lambda item: item[1], reverse=True)}
-    
+
     first_5 = list(res_dict.items())[:5]
 
     if len(first_5) == 0:
@@ -241,42 +240,35 @@ def add_values_in_dict(sample_dict, key, list_of_values):
     sample_dict[key].extend(list_of_values)
     return sample_dict
 
+
 def stats_universal_drug(db_connection):
     cur = db_connection.cursor()
-    
-   
+
     cur.execute(f'SELECT disease_drug.disease_name, disease_drug.drug_name FROM disease_drug;')
     answer = cur.fetchall()
-    
 
     # decimal to float and tuple to dict
     res_dict = {}
-    
+
     for value in answer:
         add_values_in_dict(res_dict, value[1], [value[0]])
 
-    len_dict ={}
-    
+    len_dict = {}
 
     for key in res_dict:
         len_dict[key] = len(res_dict[key])
 
     # sort by values (by prevalence) descending      
-    
 
     len_dict = {k: v for k, v in sorted(len_dict.items(),
-                                    key=lambda item: item[1], reverse=True)}
+                                        key=lambda item: item[1], reverse=True)}
 
     first_10 = list(len_dict.items())[:10]
 
-   
     fancy_string = f"The most universal drugs:\n"
     fancy_string += f'Num of Diseases it can treat | Drug name\n'
     fancy_string += f"----------------------------------------\n"
-    for (topdrug,numdis) in first_10:
-            fancy_string += f'{numdis} | {topdrug}\n'
-        
-    return fancy_string
+    for (topdrug, numdis) in first_10:
+        fancy_string += f'{numdis} | {topdrug}\n'
 
-   
-    
+    return fancy_string
